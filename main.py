@@ -3,11 +3,13 @@ from scipy.misc import imresize
 import numpy as np
 from keras.models import load_model
 import tensorflow as tf
+import logging
 
-print("loading model")
+logging.basicConfig(format="%(asctime)s %(message)s", level=logging.INFO)
+logging.info("loading tensorflow model")
 model = load_model("./tfmodel/main_model.hdf5", compile=False)
 graph = tf.get_default_graph()
-print("model loaded..")
+logging.info("tensorflow model loaded")
 
 # define the tensorflow model input. Shape: (224, 224, 3).
 DEFAULT_INPUT_SIZE = (224, 224)
@@ -24,16 +26,21 @@ def classify(image):
 def normalize_input(image):
     """
     normalize the image to a format our trained model can work with.
-    shrink image and convert to matrix of RGB values ranging between 0 to 1.
+    shrink image and convert to matrix of RGB values ranging between 0.0 to 1.0
     """
 
     image = image.resize(DEFAULT_INPUT_SIZE)
     return np.array(image) / 255.0
 
 
-def main():
-    # read image from disk
-    image = Image.open("input.jpg")
+def process(image):
+    """
+    `process` takes an image, processes it using a nural network and
+    returns the image with alpha values applied, separating the subject from
+    its background.
+    """
+
+    # first things first; let's process the image
     normalized = normalize_input(image)
 
     # from the normalized image, make sure to only grab the RGB channels, so
@@ -62,8 +69,14 @@ def main():
     # combine our alpha matrix to the original image
     output = np.array(image)[:, :, 0:3]
     output = np.append(output, classification[:, :, None], axis=-1)
-    output = Image.fromarray(output)
-    output.save("output.png", mimetype="image/png")
+    return Image.fromarray(output)
+
+
+def main():
+    # read image from disk
+    image = Image.open("input.jpg")
+    processed = process(image)
+    processed.save("output.png", mimetype="image/png")
 
 
 # Kick off main program
