@@ -5,10 +5,14 @@ import time
 import requests
 import os
 
+import signal
+
 from processor import process
 
 # which filetypes are we reacting to
 VALID_TYPES = ["JPG", "JPEG", "PNG"]
+
+stopped = False
 
 
 def is_message_valid(message):
@@ -27,17 +31,30 @@ def is_file_valid(file_object):
     return file_object["pretty_type"] in VALID_TYPES
 
 
+def handle_sigterm(_signum, _frame):
+    global stopped
+    stopped = True
+
+
 def main():
+
+    signal.signal(signal.SIGINT, handle_sigterm)
+    signal.signal(signal.SIGTERM, handle_sigterm)
+
     token = os.environ["SLACK_TOKEN"]
     client = SlackClient(token)
     edward_id = None
-    dir(client)
 
     if client.rtm_connect(auto_reconnect=True, with_team_state=False):
         edward_id = client.api_call("auth.test")["user_id"]
 
         print("Ready for action 💪")
         while client.server.connected:
+
+            if stopped:
+                print("Gracefully stopping Edward, bye :)")
+                break
+
             msgs = client.rtm_read()
             # if there's no messages to be polled, we receive an empty list.
             # we should just skip and try again
@@ -70,10 +87,6 @@ def main():
             # is probably something we'd want to offload in a separate thread
             # so that we can continue accepting jobs on the main thread.
 
-            # TODO: We probably want to do some signal interception that
-            # neatly stops polling and closes the RTM connection. Now, when we
-            # do CTRL + C we're getting hit with a ton of weird errors :)
-
             print("File attached and valid, downloading...")
 
             url = file["url_private_download"]
@@ -99,6 +112,7 @@ def main():
                     file=output_bytes,
                     title=":thumbsup:",
                 )
+
                 if slack_response["ok"]:
                     print("Uploaded processed image succesfully")
                 else:
