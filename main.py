@@ -1,4 +1,4 @@
-from slack import SlackWrapper
+from edward import Edward
 import os
 import signal
 
@@ -9,13 +9,13 @@ def main():
     token = os.getenv("SLACK_TOKEN")
     threads = os.getenv("THREADS", DEFAULT_MAX_THREADS)
 
-    slack_wrapper = SlackWrapper(token, max_threads=threads)
+    edward = Edward(slack_token=token, max_threads=threads)
 
-    stopper = lambda *args: slack_wrapper.stop()
+    stopper = lambda *args: edward.stop()
     signal.signal(signal.SIGINT, stopper)
     signal.signal(signal.SIGTERM, stopper)
 
-    slack_wrapper.start()
+    edward.start()
 
 
 # Kick off main program
