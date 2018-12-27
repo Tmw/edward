@@ -3,17 +3,17 @@ from scipy.misc import imresize
 import numpy as np
 from keras.models import load_model
 import tensorflow as tf
-import logging
+from logger import EdwardLogger
 
 # define the tensorflow model input. Shape: (224, 224, 3).
 DEFAULT_INPUT_SIZE = (224, 224)
 THRESHOLD = 255 / 2
 
-logging.basicConfig(format="%(asctime)s %(message)s", level=logging.INFO)
-logging.info("loading tensorflow model")
+
+EdwardLogger.info("loading tensorflow model")
 model = load_model("./tfmodel/main_model.hdf5", compile=False)
 graph = tf.get_default_graph()
-logging.info("tensorflow model loaded")
+EdwardLogger.info("tensorflow model loaded")
 
 
 def classify(image):
