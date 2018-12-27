@@ -1,25 +1,33 @@
 from slackclient import SlackClient
 from PIL import Image
 from io import BytesIO
-
-from processor import process
+from concurrent.futures import ThreadPoolExecutor
+import threading
 import time
 import requests
+from logger import EdwardLogger
+from processor import process
 
 
 # which filetypes are we reacting to
 VALID_TYPES = ["JPG", "JPEG", "PNG"]
+DEFAULT_MAX_THREADS = 2
 
 
 class SlackWrapper:
     def __init__(self, token):
         self.token = token
         self.client = SlackClient(token)
-        self.should_quit = False
-        self.edward_id = None
+        self.__should_quit = False
+        self.__edward_id = None
+        self.__workers = ThreadPoolExecutor(
+            max_workers=DEFAULT_MAX_THREADS, thread_name_prefix="edward_worker"
+        )
 
-    def stop():
-        self.should_quit = True
+    def stop(self):
+        EdwardLogger.info("Gracefully stopping Edward. Bye 👋")
+        self.__should_quit = True
+        self.__workers.shutdown(wait=True)
 
     def start(self):
         """
@@ -30,7 +38,7 @@ class SlackWrapper:
         if self.client.rtm_connect(auto_reconnect=True, with_team_state=False):
 
             # once that succeeds, store our own user ID for filtering
-            self.edward_id = self.client.api_call("auth.test")["user_id"]
+            self.__edward_id = self.client.api_call("auth.test")["user_id"]
 
             # kick off main loop; blocking
             self.run_main_loop()
@@ -41,13 +49,12 @@ class SlackWrapper:
         and kicking off converting jobs should a message be applicable.
         """
 
-        print("Ready for action 💪")
+        EdwardLogger.info("Ready for action 💪")
 
         # start looping as long as we're connected
         while self.client.server.connected:
             # should we shutdown?
-            if self.should_quit:
-                print("Gracefully stopping Edward. Bye 👋")
+            if self.__should_quit:
                 break
 
             batch = self.client.rtm_read()
@@ -57,9 +64,11 @@ class SlackWrapper:
                 # all is OK, spawn handler
                 download_url, response_channel_id = job_params
 
-                # TODO: Spawn handle_file in separate thread :)
-                # keep track or running threads in classs and join them on close.
-                self.handle_file(download_url, response_channel_id)
+                # add job to threaded worker pool so we can continue
+                # accepting new work in the main thread
+                self.__workers.submit(
+                    self.handle_file, download_url, response_channel_id
+                )
 
             # no matter if we scheduled a job or not; wait a bit
             time.sleep(1)
@@ -87,7 +96,7 @@ class SlackWrapper:
             return None
 
         # if message author is edward itself, ignore to avoid endless looping
-        if message["user"] == self.edward_id:
+        if message["user"] == self.__edward_id:
             return None
 
         # if it isn't a file_shared message, just ignore and continue
@@ -97,7 +106,7 @@ class SlackWrapper:
         # if there is a file but it is not supported by Edward
         file = message["files"][0]
         if not is_file_valid(file):
-            print("Attached file not of valid type, skipping")
+            EdwardLogger.info("Attached file not of valid type, skipping")
             return None
 
         # if we've reached this point, we encountered a valid message.
@@ -110,15 +119,15 @@ class SlackWrapper:
         the image processor and uploading it to the originating Slack channel.
         """
 
-        print("File attached and valid, handling")
+        EdwardLogger.info("File attached and valid, handling in")
 
         response = requests.get(download_url, headers=self.__get_http_headers())
         if response.ok:
-            print("Downloaded file, start converting..")
+            EdwardLogger.info("Downloaded file, start converting..")
             img = Image.open(BytesIO(response.content))
             processed = process(img)
 
-            print("File processed, uploading to Slack")
+            EdwardLogger.info("File processed, uploading to Slack")
 
             # store image as bytes array and rewind
             output_bytes = BytesIO()
@@ -134,12 +143,12 @@ class SlackWrapper:
             )
 
             if slack_response["ok"]:
-                print("Uploaded processed image succesfully")
+                EdwardLogger.info("Uploaded processed image succesfully")
             else:
                 err = slack_response["error"]
-                print("Error uploading to slack: {}".format(err))
+                EdwardLogger.info("Error uploading to slack: {}".format(err))
 
-            print("Done")
+            EdwardLogger.info("Done")
 
     def __get_http_headers(self):
         return {"Authorization": "Bearer {}".format(self.token)}
