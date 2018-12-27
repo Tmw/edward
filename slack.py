@@ -1,32 +1,36 @@
 from slackclient import SlackClient
-from PIL import Image
-from io import BytesIO
-from concurrent.futures import ThreadPoolExecutor
-import threading
+from logger import EdwardLogger
 import time
 import requests
-from logger import EdwardLogger
-from processor import process
-
-
-# which filetypes are we reacting to
-VALID_TYPES = ["JPG", "JPEG", "PNG"]
 
 
 class SlackWrapper:
-    def __init__(self, token, max_threads=2):
-        self.token = token
-        self.client = SlackClient(token)
+    DEFAULT_SUPPORTED_FILE_TYPES = ["JPG", "JPEG", "PNG"]
+
+    def __init__(
+        self,
+        token=None,
+        on_file_shared_fn=None,
+        supported_file_types=DEFAULT_SUPPORTED_FILE_TYPES,
+    ):
+        """
+        SlackWrapper handles communication with the Slack RTM and Web APIs
+
+        Params:
+        `slack_token` : String,
+        `supported_file_types` a list of supported file types
+        `on_file_shared_fn` : Fn(string, string) -> None - handle files
+        """
+
+        self.__token = token
+        self.__client = SlackClient(token)
         self.__should_quit = False
         self.__edward_id = None
-        self.__workers = ThreadPoolExecutor(
-            max_workers=max_threads, thread_name_prefix="edward_worker"
-        )
+        self.__supported_file_types = supported_file_types
+        self.__on_file_shared_fn = on_file_shared_fn
 
     def stop(self):
-        EdwardLogger.info("Gracefully stopping Edward. Bye 👋")
         self.__should_quit = True
-        self.__workers.shutdown(wait=True)
 
     def start(self):
         """
@@ -34,10 +38,10 @@ class SlackWrapper:
         """
 
         # first things first; let's connect to Slack RTM
-        if self.client.rtm_connect(auto_reconnect=True, with_team_state=False):
+        if self.__client.rtm_connect(auto_reconnect=True, with_team_state=False):
 
             # once that succeeds, store our own user ID for filtering
-            self.__edward_id = self.client.api_call("auth.test")["user_id"]
+            self.__edward_id = self.__client.api_call("auth.test")["user_id"]
 
             # kick off main loop; blocking
             self.run_main_loop()
@@ -51,23 +55,21 @@ class SlackWrapper:
         EdwardLogger.info("Ready for action 💪")
 
         # start looping as long as we're connected
-        while self.client.server.connected:
+        while self.__client.server.connected:
             # should we shutdown?
             if self.__should_quit:
                 break
 
-            batch = self.client.rtm_read()
+            batch = self.__client.rtm_read()
             job_params = self.extract_job_params(batch)
 
             if job_params is not None:
                 # all is OK, spawn handler
                 download_url, response_channel_id = job_params
 
-                # add job to threaded worker pool so we can continue
-                # accepting new work in the main thread
-                self.__workers.submit(
-                    self.handle_file, download_url, response_channel_id
-                )
+                # perform the callback containing the job parameters
+                EdwardLogger.info("File attached and valid")
+                self.__on_file_shared_fn(download_url, response_channel_id)
 
             # no matter if we scheduled a job or not; wait a bit
             time.sleep(1)
@@ -91,7 +93,7 @@ class SlackWrapper:
         message = messages[0]
 
         # if message does not contain required fields, ignore it
-        if not is_message_valid(message):
+        if not self.__is_message_valid(message):
             return None
 
         # if message author is edward itself, ignore to avoid endless looping
@@ -99,12 +101,12 @@ class SlackWrapper:
             return None
 
         # if it isn't a file_shared message, just ignore and continue
-        if not is_file_attached(message):
+        if not self.__is_file_attached(message):
             return None
 
         # if there is a file but it is not supported by Edward
         file = message["files"][0]
-        if not is_file_valid(file):
+        if file["pretty_type"] not in self.__supported_file_types:
             EdwardLogger.info("Attached file not of valid type, skipping")
             return None
 
@@ -112,59 +114,41 @@ class SlackWrapper:
         # extract the important bits and return a tuple containing job params
         return (file["url_private_download"], message["channel"])
 
-    def handle_file(self, download_url, response_channel_id):
+    def download_image(self, image_download_url):
         """
-        handle_file takes care of downloading the file, running it through
-        the image processor and uploading it to the originating Slack channel.
+        download_file accepts a file_download_url, provides authorization
+        and kicks off the request to Slack Web API
+        """
+        return requests.get(image_download_url, headers=self.__get_http_headers())
+
+    def upload_image(self, channel_id, bytes):
+        """
+        upload_image uploads the sequence of bytes to the provided slack channel.
+        It returns either None if all went well, or the error if something blew up
         """
 
-        EdwardLogger.info("File attached and valid, handling in")
+        response = self.__client.api_call(
+            "files.upload", channels=channel_id, file=bytes
+        )
 
-        response = requests.get(download_url, headers=self.__get_http_headers())
-        if response.ok:
-            EdwardLogger.info("Downloaded file, start converting..")
-            img = Image.open(BytesIO(response.content))
-            processed = process(img)
-
-            EdwardLogger.info("File processed, uploading to Slack")
-
-            # store image as bytes array and rewind
-            output_bytes = BytesIO()
-            processed.save(output_bytes, format="PNG")
-            output_bytes.seek(0)
-
-            # upload processed image to Slack
-            slack_response = self.client.api_call(
-                "files.upload",
-                channels=response_channel_id,
-                file=output_bytes,
-                title=":thumbsup:",
-            )
-
-            if slack_response["ok"]:
-                EdwardLogger.info("Uploaded processed image succesfully")
-            else:
-                err = slack_response["error"]
-                EdwardLogger.info("Error uploading to slack: {}".format(err))
-
-            EdwardLogger.info("Done")
+        if response["ok"]:
+            return None
+        else:
+            return response["error"]
 
     def __get_http_headers(self):
-        return {"Authorization": "Bearer {}".format(self.token)}
+        return {"Authorization": "Bearer {}".format(self.__token)}
 
+    def __is_message_valid(self, message):
+        return (
+            "type" in message
+            and message["type"] == "message"
+            and "user" in message
+        )
 
-def is_message_valid(message):
-    return "type" in message and message["type"] == "message" and "user" in message
-
-
-def is_file_attached(message):
-    return (
-        message["type"] == "message"
-        and "files" in message
-        and len(message["files"]) > 0
-    )
-
-
-def is_file_valid(file_object):
-    return file_object["pretty_type"] in VALID_TYPES
-
+    def __is_file_attached(self, message):
+        return (
+            message["type"] == "message"
+            and "files" in message
+            and len(message["files"]) > 0
+        )

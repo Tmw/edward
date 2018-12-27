@@ -24,7 +24,9 @@ def classify(image):
     with graph.as_default():
         classification = model.predict(image[None, :, :, :])
 
-    return classification.reshape((DEFAULT_INPUT_SIZE[0], DEFAULT_INPUT_SIZE[1], -1))
+    return classification.reshape(
+        (DEFAULT_INPUT_SIZE[0], DEFAULT_INPUT_SIZE[1], -1)
+    )
 
 
 def normalize_input(image):
