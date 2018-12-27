@@ -2,10 +2,14 @@ from slack import SlackWrapper
 import os
 import signal
 
+DEFAULT_MAX_THREADS = 2
+
 
 def main():
-    token = os.environ["SLACK_TOKEN"]
-    slack_wrapper = SlackWrapper(token)
+    token = os.getenv("SLACK_TOKEN")
+    threads = os.getenv("THREADS", DEFAULT_MAX_THREADS)
+
+    slack_wrapper = SlackWrapper(token, max_threads=threads)
 
     stopper = lambda *args: slack_wrapper.stop()
     signal.signal(signal.SIGINT, stopper)

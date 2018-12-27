@@ -11,17 +11,16 @@ from processor import process
 
 # which filetypes are we reacting to
 VALID_TYPES = ["JPG", "JPEG", "PNG"]
-DEFAULT_MAX_THREADS = 2
 
 
 class SlackWrapper:
-    def __init__(self, token):
+    def __init__(self, token, max_threads=2):
         self.token = token
         self.client = SlackClient(token)
         self.__should_quit = False
         self.__edward_id = None
         self.__workers = ThreadPoolExecutor(
-            max_workers=DEFAULT_MAX_THREADS, thread_name_prefix="edward_worker"
+            max_workers=max_threads, thread_name_prefix="edward_worker"
         )
 
     def stop(self):
