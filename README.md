@@ -25,5 +25,14 @@ python -m unittest discover -s tests
 # Running Edward
 
 ```bash
-SLACK_TOKEN="YOUR_SLACK_TOKEN" python main.py
+SLACK_TOKEN="YOUR_SLACK_TOKEN" \
+THREADS=2 \
+python main.py
 ```
+
+# Environment Variables
+
+| Variable    | Type   | Meaning                        |
+| ----------- | ------ | ------------------------------ |
+| SLACK_TOKEN | String | Your slack token               |
+| THREADS     | Int    | How many threads do we reserve |
