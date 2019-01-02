@@ -1,7 +1,8 @@
 from concurrent.futures import ThreadPoolExecutor
 from slack import SlackWrapper
 from logger import EdwardLogger
-from processor import process
+import processor
+
 from PIL import Image
 from io import BytesIO
 
@@ -20,6 +21,9 @@ class Edward:
             thread_name_prefix="edward_worker"
         )
 
+        # start loading the Keras model
+        processor.prepare()
+
     def stop(self):
         EdwardLogger.info("Gracefully stopping Edward. Bye 👋")
         self.__slack_wrapper.stop()
@@ -31,7 +35,7 @@ class Edward:
     def on_file_shared(self, download_url, response_channel_id):
         """
         This callback is fired when the slack_wrapper found a shared image
-        that is elligible for processing. It grabs the params and schedules the
+        that is eligible for processing. It grabs the params and schedules the
         processing job in a background thread.
         """
 
@@ -44,7 +48,7 @@ class Edward:
         handle_file takes care of downloading the file, running it through
         the image processor and uploading it to the originating Slack channel.
 
-        This method is calld from the ThreadPoolExecutor so it does not block
+        This method is called from the ThreadPoolExecutor so it does not block
         the main thread while doing async io.
         """
 
@@ -52,7 +56,7 @@ class Edward:
         if response.ok:
             EdwardLogger.info("Downloaded file, start converting..")
             img = Image.open(BytesIO(response.content))
-            processed = process(img)
+            processed = processor.process(img)
             EdwardLogger.info("File processed, uploading to Slack")
 
             # store image as bytes array and rewind
@@ -66,7 +70,7 @@ class Edward:
             )
 
             if error is not None:
-                EdwardLogger.info("Error uploading to slack: {}".format(err))
+                EdwardLogger.info("Error uploading to slack: {}".format(error))
             else:
                 EdwardLogger.info("Uploaded processed image successfully")
 
