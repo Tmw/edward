@@ -9,11 +9,9 @@ from logger import EdwardLogger
 DEFAULT_INPUT_SIZE = (224, 224)
 THRESHOLD = 255 / 2
 
-
-EdwardLogger.info("loading tensorflow model")
-model = load_model("./tfmodel/main_model.hdf5", compile=False)
-graph = tf.get_default_graph()
-EdwardLogger.info("tensorflow model loaded")
+# declare variables for model and graph to be loaded in later
+model = None
+graph = None
 
 
 def classify(image):
@@ -27,6 +25,23 @@ def classify(image):
     return classification.reshape(
         (DEFAULT_INPUT_SIZE[0], DEFAULT_INPUT_SIZE[1], -1)
     )
+
+
+def prepare():
+    """
+    Loads the keras model from disk into a module global variable if not
+    already present
+    """
+
+    global model, graph
+
+    if model is None:
+        EdwardLogger.info("loading tensorflow model")
+        model = load_model("./tfmodel/main_model.hdf5", compile=False)
+        EdwardLogger.info("tensorflow model loaded")
+
+    if graph is None:
+        graph = tf.get_default_graph()
 
 
 def normalize_input(image):
