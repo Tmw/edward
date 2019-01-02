@@ -10,25 +10,19 @@ _Note; the model in this repository is merely a mirror. In both cases; pull usin
 
 # Running tests
 
-_Using Make:_
-
 ```bash
 make test
 ```
 
-_or without make:_
+# Running Edward from source
+
+Make sure you fill in the missing pieces in your `.env` file and simply run:
 
 ```bash
-python -m unittest discover -s tests
+make run
 ```
 
-# Running Edward
-
-```bash
-SLACK_TOKEN="YOUR_SLACK_TOKEN" \
-THREADS=2 \
-python main.py
-```
+> _if you don't have an .env file, create one by looking at the example (`.example.env`)_
 
 # Environment Variables
 
