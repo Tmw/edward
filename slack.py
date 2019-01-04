@@ -5,7 +5,7 @@ import requests
 
 
 class SlackWrapper:
-    DEFAULT_SUPPORTED_FILE_TYPES = ["JPG", "JPEG", "PNG"]
+    DEFAULT_SUPPORTED_FILE_TYPES = ["jpg", "jpeg", "png"]
 
     def __init__(
         self,
@@ -106,7 +106,8 @@ class SlackWrapper:
 
         # if there is a file but it is not supported by Edward
         file = message["files"][0]
-        if file["pretty_type"] not in self.__supported_file_types:
+        pretty_type = file["pretty_type"].lower()
+        if pretty_type not in self.__supported_file_types:
             EdwardLogger.info("Attached file not of valid type, skipping")
             return None
 
