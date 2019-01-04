@@ -52,7 +52,7 @@ class SlackWrapper:
         and kicking off converting jobs should a message be applicable.
         """
 
-        EdwardLogger.info("Ready for action 💪")
+        EdwardLogger.info("Ready for action!")
 
         # start looping as long as we're connected
         while self.__client.server.connected:

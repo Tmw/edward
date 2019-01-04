@@ -22,7 +22,7 @@ class Edward:
         processor.prepare()
 
     def stop(self):
-        EdwardLogger.info("Gracefully stopping Edward. Bye 👋")
+        EdwardLogger.info("Gracefully stopping Edward. Bye!")
         self.__slack_wrapper.stop()
         self.__worker_queue.shutdown(wait=True)
 
