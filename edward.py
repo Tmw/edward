@@ -16,10 +16,7 @@ class Edward:
             on_file_shared_fn=self.on_file_shared
         )
 
-        self.__worker_queue = ThreadPoolExecutor(
-            max_workers=max_threads,
-            thread_name_prefix="edward_worker"
-        )
+        self.__worker_queue = ThreadPoolExecutor(max_workers=max_threads)
 
         # start loading the Keras model
         processor.prepare()
