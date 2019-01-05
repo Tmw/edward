@@ -1,7 +1,10 @@
 <img src="meta/edward_logo.svg" width="300" />
 <br />
 <br />
-Edward Scissorhands is a slackbot that utilizes machinelearning to remove the background of any uploaded image. Edward works best with images containing people.
+
+[![Build Status](https://travis-ci.com/Tmw/edward.svg?branch=master)](https://travis-ci.com/Tmw/edward)
+
+**Edward Scissorhands** is a slackbot that utilizes machinelearning to remove the background of any uploaded image. Edward works best with images containing people.
 
 ## Edward's brain 🧠
 
