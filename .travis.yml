@@ -1,9 +1,13 @@
 language: python
 python:
   - "3.5"
-
+services:
+  - docker
 install:
   - pip install -r requirements.txt
-
-script:
-  - make test
+jobs:
+  include:
+    - stage: Tests
+      script: scripts/edward test
+    - stage: Build & Push
+      script: scripts/edward build && scripts/edward push

@@ -15,7 +15,7 @@ _Note; the model in this repository is merely a mirror. In both cases; pull usin
 ## Running tests
 
 ```bash
-make test
+scripts/edward test
 ```
 
 ## Running Edward from source
@@ -23,7 +23,14 @@ make test
 Make sure you fill in the missing pieces in your `.env` file and simply run:
 
 ```bash
-make run
+scripts/edward run
+```
+
+## Build & push
+
+```bash
+scripts/edward build
+scripts/edward push
 ```
 
 > _if you don't have an .env file, create one by looking at the example (`.example.env`)_
