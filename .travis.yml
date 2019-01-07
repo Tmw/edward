@@ -8,5 +8,6 @@ install:
 jobs:
   include:
     - stage: "Tests"
-      name: "Unit tests"
       script: make test
+    - stage: "Pull LFS"
+      script: git lfs pull
