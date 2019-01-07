@@ -9,6 +9,7 @@ run:
 build:
 	git lfs pull
 	docker build -t $(DOCKER_REPO) .
+	docker images
 
 push:
 	echo $(DOCKER_PASSWORD) | docker login -u $(DOCKER_USERNAME) --password-stdin
