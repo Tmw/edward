@@ -10,4 +10,6 @@ jobs:
     - stage: "Tests"
       script: make test
     - stage: "Pull LFS"
-      script: git lfs pull
+      script:
+        - git lfs pull
+        - ls -la ./tfmodel
