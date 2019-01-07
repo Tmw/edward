@@ -10,5 +10,4 @@ jobs:
     - stage: Tests
       script: make test
     - stage: Build & Push
-      script: make build
-      script: make push
+      script: make build & make push
