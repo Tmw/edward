@@ -8,6 +8,6 @@ install:
 jobs:
   include:
     - stage: Tests
-      script: make test
+      script: scripts/edward test
     - stage: Build & Push
-      script: make build && make push
+      script: scripts/edward build && scripts/edward push

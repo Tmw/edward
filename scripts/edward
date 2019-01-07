@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+# load subscripts from scripts directory
+for f in scripts/*.sh ; do source $f; done
+
+DEFAULT_DOCKER_REPO="tiemenwaterreus/edward"
+
+print-usage() {
+  echo "invalid option $1"
+  echo "Usage: scripts/edward test|run|build|push"
+}
+
+main(){
+  case $1 in
+    "test") test-edward ;;
+    "run") run-edward ;;
+    "build") build-edward ;;
+    "push") push-edward ;;
+
+    *) print-usage $1 ;;
+  esac
+}
+
+
+main $1
