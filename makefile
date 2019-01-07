@@ -12,4 +12,4 @@ build:
 
 push:
 	echo $(DOCKER_PASSWORD) | docker login -u $(DOCKER_USERNAME) --password-stdin
-	# docker push $(DOCKER_REPO)
+	docker push $(DOCKER_REPO)
