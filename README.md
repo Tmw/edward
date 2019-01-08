@@ -14,29 +14,52 @@ Edward depends on a pre-trained Tensorflow model as explained in this [blogpost]
 
 _Note; the model in this repository is merely a mirror. In both cases; pull using [git lfs](https://git-lfs.github.com/)._
 
-## Running tests
+# Running from Docker
+
+By far the easiest way to run Edward is by using Docker. Pull the image directly from Dockerhub, give Edward a `SLACK_TOKEN` and we're off to the races!
+
+**Example:**
+
+```bash
+docker run -it --rm \
+  -e "SLACK_TOKEN=<your_slack_token>" \
+  tiemenwaterreus/edward
+```
+
+_Where `<your_slack_token>` is replaced with your bot's Slack Token_
+
+# Run from Source
+
+```bash
+git clone https://github.com/tmw/edward.git && cd edward
+```
+
+#### Running Tests
 
 ```bash
 scripts/edward test
 ```
 
-## Running Edward from source
+#### Running Edward locally
 
 Make sure you fill in the missing pieces in your `.env` file and simply run:
 
 ```bash
 scripts/edward run
 ```
+
 > _if you don't have an .env file, create one by looking at the example (`.example.env`)_
 
-## Build & push
+#### Build & push
 
 ```bash
 scripts/edward build
 scripts/edward push
 ```
 
-## Environment Variables
+# Environment Variables
+
+For additional tweaks, edward is taking the following environment variables into account when booting up:
 
 | Variable    | Type   | Meaning                        |
 | ----------- | ------ | ------------------------------ |
