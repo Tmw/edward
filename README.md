@@ -16,7 +16,7 @@ _Note; the model in this repository is merely a mirror. In both cases; pull usin
 
 # Running from Docker
 
-By far the easiest way to run Edward is by using Docker. Pull the image directly from Dockerhub, give Edward a `SLACK_TOKEN` and we're off to the races!
+By far the easiest way to run Edward is by using Docker. Pull the image directly from [Dockerhub](https://hub.docker.com/r/tiemenwaterreus/edward), give Edward a `SLACK_TOKEN` and we're off to the races!
 
 **Example:**
 
