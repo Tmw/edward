@@ -9,6 +9,9 @@ def main():
     token = os.getenv("SLACK_TOKEN")
     threads = os.getenv("THREADS", DEFAULT_MAX_THREADS)
 
+    if token is None:
+        raise RuntimeError("SLACK_TOKEN not set")
+
     edward = Edward(slack_token=token, max_threads=threads)
 
     stopper = lambda *args: edward.stop()
