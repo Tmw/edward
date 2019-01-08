@@ -25,6 +25,7 @@ Make sure you fill in the missing pieces in your `.env` file and simply run:
 ```bash
 scripts/edward run
 ```
+> _if you don't have an .env file, create one by looking at the example (`.example.env`)_
 
 ## Build & push
 
@@ -32,8 +33,6 @@ scripts/edward run
 scripts/edward build
 scripts/edward push
 ```
-
-> _if you don't have an .env file, create one by looking at the example (`.example.env`)_
 
 ## Environment Variables
 
