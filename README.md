@@ -28,6 +28,12 @@ docker run -it --rm \
 
 _Where `<your_slack_token>` is replaced with your bot's Slack Token_
 
+# Obtaining a `slack_token`
+
+Getting a slack (bot) token is easy; just browse to [create bot integration](https://my.slack.com/services/new/bot) page on Slack, give your bot an username (eg: `edward`) and hit the green button. Hooray! You just made a Slack (bot) integration!
+
+On the next page you can customize your integration some more by providing an icon and a short description. The most important piece is the `API Token` near the top. Its a pretty long string which starts with `xoxb-`. Copy this token and pass it in the `env`-variables of edward.
+
 # Run from Source
 
 ```bash
